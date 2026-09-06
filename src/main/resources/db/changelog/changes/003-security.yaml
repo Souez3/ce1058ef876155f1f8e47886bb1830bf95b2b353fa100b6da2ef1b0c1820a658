@@ -1,0 +1,70 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 003-security
+      author: dev
+      changes:
+
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE public.users
+                  ADD COLUMN password_hash varchar(100) NOT NULL DEFAULT '';
+              ALTER TABLE public.users
+                  ALTER COLUMN password_hash DROP DEFAULT;
+
+              ALTER TABLE public.users DROP CONSTRAINT users_role_check;
+              UPDATE public.users SET role = 'WAREHOUSE_STAFF' WHERE role = 'WAREHOUSE_STUFF';
+              ALTER TABLE public.users ADD CONSTRAINT users_role_check CHECK (
+                  role::text = ANY (ARRAY[
+                      'SYSTEM_ADMIN','MANAGER','CLIENT','WAREHOUSE_STAFF','COURIER'
+                  ]::text[])
+              );
+              
+              CREATE TABLE public.refresh_token (
+                  id uuid NOT NULL,
+                  removed boolean NOT NULL DEFAULT false,
+                  created_at timestamp(6) with time zone NOT NULL,
+                  updated_at timestamp(6) with time zone NOT NULL,
+                  user_id uuid NOT NULL,
+                  token varchar(128) NOT NULL,
+                  expires_at timestamp(6) with time zone NOT NULL,
+                  revoked boolean NOT NULL DEFAULT false,
+                  CONSTRAINT refresh_token_pkey PRIMARY KEY (id),
+                  CONSTRAINT refresh_token_token_key UNIQUE (token),
+                  CONSTRAINT fk_refresh_token_user FOREIGN KEY (user_id)
+                      REFERENCES public.users(id) ON DELETE CASCADE
+              );
+              CREATE INDEX idx_refresh_token_user ON public.refresh_token(user_id);
+
+              ALTER TABLE public.products DROP COLUMN sub_category;
+              ALTER TABLE public.products ADD COLUMN sub_category varchar(64);
+
+              CREATE INDEX idx_orders_customer_phone ON public.orders(customer_phone);
+              CREATE INDEX idx_orders_status ON public.orders(status);
+              CREATE INDEX idx_orders_user_id ON public.orders(user_id);
+              CREATE INDEX idx_order_items_order_id ON public.order_items(order_id);
+              CREATE INDEX idx_order_items_product_id ON public.order_items(product_id);
+              CREATE INDEX idx_products_category ON public.products(category);
+              CREATE INDEX idx_products_sub_category ON public.products(sub_category);
+
+  - changeSet:
+      id: 003-seed-admin
+      author: dev
+      # Демо-админ ТОЛЬКО для разработки. Пароль: admin123
+      # В проде удалить changeset или переопределить пароль первым делом.
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              INSERT INTO public.users
+                  (id, first_name, last_name, phone, email, password_hash, role,
+                   removed, created_at, updated_at)
+              VALUES
+                  ('a0000000-0000-0000-0000-000000000001',
+                   'Admin', 'Local',
+                   '+70000000001',
+                   'admin@darkstore.local',
+                   '$2b$10$/FvpqZ0Z3nU04MDGZSy9AO36XxW9zkVOnk5DlFD60Lt/Fj.yO408W',
+                   'SYSTEM_ADMIN',
+                   false, now(), now());

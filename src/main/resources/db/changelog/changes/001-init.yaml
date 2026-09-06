@@ -1,0 +1,135 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 001-init
+      author: dev
+      changes:
+
+        - sql:
+            splitStatements: false
+            stripComments: false
+            sql: |
+
+              CREATE TABLE public.users (
+                  id uuid NOT NULL,
+                  removed boolean,
+                  created_at timestamp(6) with time zone,
+                  updated_at timestamp(6) with time zone,
+                  email character varying(255),
+                  first_name character varying(255) NOT NULL,
+                  last_name character varying(255),
+                  phone character varying(255) NOT NULL,
+                  role character varying(255) NOT NULL,
+                  CONSTRAINT users_pkey PRIMARY KEY (id),
+                  CONSTRAINT users_email_key UNIQUE (email),
+                  CONSTRAINT users_phone_key UNIQUE (phone),
+                  CONSTRAINT users_role_check CHECK (
+                      role::text = ANY (ARRAY[
+                          'SYSTEM_ADMIN',
+                          'MANAGER',
+                          'CLIENT',
+                          'WAREHOUSE_STUFF',
+                          'COURIER'
+                      ]::text[])
+                  )
+              );
+
+              CREATE TABLE public.delivery_addresses (
+                  id uuid NOT NULL,
+                  removed boolean,
+                  created_at timestamp(6) with time zone,
+                  updated_at timestamp(6) with time zone,
+                  user_id uuid,
+                  apartment character varying(255),
+                  city character varying(255) NOT NULL,
+                  entrance character varying(255),
+                  floor character varying(255),
+                  house character varying(255) NOT NULL,
+                  street character varying(255) NOT NULL,
+                  CONSTRAINT delivery_addresses_pkey PRIMARY KEY (id),
+                  CONSTRAINT fk_delivery_user FOREIGN KEY (user_id)
+                      REFERENCES public.users(id)
+              );
+
+              CREATE TABLE public.products (
+                  id uuid NOT NULL,
+                  price numeric(10,2) NOT NULL,
+                  removed boolean,
+                  sub_category smallint,
+                  created_at timestamp(6) with time zone,
+                  updated_at timestamp(6) with time zone,
+                  category character varying(255) NOT NULL,
+                  description character varying(255),
+                  name character varying(255) NOT NULL,
+                  picture_url character varying(255),
+                  CONSTRAINT products_pkey PRIMARY KEY (id),
+                  CONSTRAINT products_name_key UNIQUE (name),
+                  CONSTRAINT products_category_check CHECK (
+                      category::text = ANY (ARRAY[
+                          'DIARY','BAKERY','DRINKS','SNACKS',
+                          'MEAT','GROCERY','VEGETABLES','FREEZINGS','DISHES'
+                      ]::text[])
+                  )
+              );
+
+              CREATE TABLE public.stock (
+                  id uuid NOT NULL,
+                  purchase_price numeric(38,2) NOT NULL,
+                  quantity integer NOT NULL,
+                  reserved_quantity integer NOT NULL,
+                  removed boolean,
+                  created_at timestamp(6) with time zone,
+                  updated_at timestamp(6) with time zone,
+                  version bigint NOT NULL,
+                  product_id uuid NOT NULL,
+                  CONSTRAINT stock_pkey PRIMARY KEY (id),
+                  CONSTRAINT stock_product_id_key UNIQUE (product_id),
+                  CONSTRAINT fk_stock_product FOREIGN KEY (product_id)
+                      REFERENCES public.products(id)
+              );
+
+              CREATE TABLE public.orders (
+                  id uuid NOT NULL,
+                  removed boolean,
+                  total_price numeric(10,2) NOT NULL,
+                  created_at timestamp(6) with time zone,
+                  updated_at timestamp(6) with time zone,
+                  address_id uuid NOT NULL,
+                  user_id uuid,
+                  comment character varying(255),
+                  customer_name character varying(255),
+                  customer_phone character varying(255) NOT NULL,
+                  payment_type character varying(255) NOT NULL,
+                  status character varying(255) NOT NULL,
+                  CONSTRAINT orders_pkey PRIMARY KEY (id),
+                  CONSTRAINT orders_address_id_key UNIQUE (address_id),
+                  CONSTRAINT fk_orders_user FOREIGN KEY (user_id)
+                      REFERENCES public.users(id),
+                  CONSTRAINT fk_orders_address FOREIGN KEY (address_id)
+                      REFERENCES public.delivery_addresses(id),
+                  CONSTRAINT orders_payment_type_check CHECK (
+                      payment_type::text = ANY (ARRAY['CARD','CASH','ONLINE']::text[])
+                  ),
+                  CONSTRAINT orders_status_check CHECK (
+                      status::text = ANY (ARRAY[
+                          'CREATED','PAID','ASSEMBLED',
+                          'SHIPPED','DELIVERED','COMPLETED','CANCELLED'
+                      ]::text[])
+                  )
+              );
+
+              CREATE TABLE public.order_items (
+                  id uuid NOT NULL,
+                  price_at_purchase numeric(10,2) NOT NULL,
+                  quantity integer NOT NULL,
+                  removed boolean,
+                  created_at timestamp(6) with time zone,
+                  updated_at timestamp(6) with time zone,
+                  order_id uuid NOT NULL,
+                  product_id uuid NOT NULL,
+                  CONSTRAINT order_items_pkey PRIMARY KEY (id),
+                  CONSTRAINT fk_order_items_order FOREIGN KEY (order_id)
+                      REFERENCES public.orders(id),
+                  CONSTRAINT fk_order_items_product FOREIGN KEY (product_id)
+                      REFERENCES public.products(id)
+              );

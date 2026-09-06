@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Darkstore — демо MVP</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header id="topbar" class="hidden">
+  <div class="brand">🌙 Darkstore</div>
+  <nav id="roleNav"></nav>
+  <div class="user-box">
+    <span id="userLabel"></span>
+    <button id="logoutBtn" class="btn btn-ghost btn-sm" data-action="logout">Выйти</button>
+  </div>
+</header>
+
+<main id="viewRoot"></main>
+
+<div id="toast" class="toast hidden"></div>
+
+<div id="modalOverlay" class="modal-overlay hidden">
+  <div id="modalBox" class="modal-box"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

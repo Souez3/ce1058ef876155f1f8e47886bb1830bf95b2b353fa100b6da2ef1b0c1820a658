@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: darkstore
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/darkstore
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  jackson:
+    default-property-inclusion: non_null
+
+app:
+  security:
+    jwt:
+      secret: aVM9Vu7LiAr2tNSrdYEGQcw+OPLfsdx0/R9tuJIJ7WHHbXjRXYO9HB7SiZRVnTJk
+      access-ttl: 15m
+      refresh-ttl: 30d
+    cors:
+      allowed-origins: http://localhost:3000,http://localhost:8080
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+
+logging:
+  level:
+    org.springframework.security: INFO
