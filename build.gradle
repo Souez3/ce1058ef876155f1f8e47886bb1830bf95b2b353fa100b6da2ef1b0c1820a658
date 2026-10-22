@@ -1,0 +1,82 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.2.0'
+    id 'org.jetbrains.kotlin.plugin.spring' version '2.2.0'
+    id 'org.jetbrains.kotlin.plugin.jpa' version '2.2.0'
+    id 'org.jetbrains.kotlin.plugin.allopen' version '2.2.0'
+    id 'java'
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+// Перебиваем версию Kotlin из BOM Spring Boot 3.3.4 (там 1.9.25): иначе kotlin-reflect будет старый
+ext['kotlin.version'] = '2.2.0'
+ext['testcontainers.version'] = '1.21.4'
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'darkstore'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+    implementation 'org.liquibase:liquibase-core'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.7'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.7'
+
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+springBoot {
+    // Для Kotlin-функции main в файле DarkstoreApplication.kt класс называется DarkstoreApplicationKt
+    mainClass = 'com.example.darkstore.DarkstoreApplicationKt'
+}
+
+// Hibernate создаёт lazy-прокси через наследование, поэтому сущности должны быть open
+allOpen {
+    annotation 'jakarta.persistence.Entity'
+    annotation 'jakarta.persistence.MappedSuperclass'
+    annotation 'jakarta.persistence.Embeddable'
+}
+
+kotlin {
+    compilerOptions {
+        // Nullability-аннотации Spring (@Nullable, @NonNullApi) становятся строгими типами Kotlin
+        freeCompilerArgs.add('-Xjsr305=strict')
+    }
+}

@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://set-by-testcontainers
+    username: set-by-testcontainers
+    password: set-by-testcontainers
+
+app:
+  security:
+    jwt:
+      secret: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
